@@ -1,170 +1,106 @@
 # Evaluation Agent
 
-This repository contains an end-to-end evaluation stack for text-classification models. It ships with
+![Evaluation Dashboard](docs/images/dashboard.png)
 
-- a modular Python evaluation agent capable of orchestrating datasets, model adapters, and metrics,
-- a FastAPI service with a SQLite-backed run history, and
-- a Vite + React dashboard for visualising metrics and predictions.
+A comprehensive, end-to-end evaluation stack for text-classification models. This project provides a modular Python agent for orchestrating evaluations, a FastAPI backend for management, and a modern React dashboard for visualization.
 
-The default workflow benchmarks sentiment analysis models on small JSONL datasets. Two presets are
-provided out of the box: a deterministic keyword baseline and a scikit-learn TF-IDF + logistic
-regression model that can be re-trained locally.
+## Key Features
+
+*   **Modular Evaluation Engine**: Orchestrate datasets, model adapters, and metrics with ease.
+*   **Modern Dashboard**: A beautiful, dark-themed React UI with glassmorphism effects to visualize run history and details.
+*   **Real-World Data Integration**: Includes presets for evaluating against real-world datasets (e.g., IMDb sentiment analysis).
+*   **Run History Management**: Persist evaluation results to SQLite and easily clear history directly from the UI.
+*   **Extensible Architecture**: Easily register new models, datasets, and metrics.
 
 ## Project Layout
 
 ```
-configs/                  # Evaluation configurations (keyword baseline & sklearn)
-data/                     # Training and evaluation datasets (JSONL)
-frontend/                 # Vite + React dashboard that consumes the FastAPI API
-scripts/                  # Utility scripts (e.g., training the sklearn model)
-src/eval_agent/           # Python evaluation agent, API service, and persistence
-tests/                    # Pytest-based regression tests
+configs/                  # Evaluation configurations (JSON)
+data/                     # Datasets (JSONL)
+frontend/                 # React + Vite dashboard
+scripts/                  # Utility scripts (data fetching, training)
+src/eval_agent/           # Core Python package (agent, API, storage)
+tests/                    # Regression tests
 ```
 
 ## Quickstart
 
-### 1. Install dependencies
+### 1. Install Dependencies
 
+**Backend**
 ```bash
 pip install -e .
 ```
 
-The Python package now bundles LangChain and the `faiss-cpu` vector store so retrieval-augmented
-generation (RAG) workflows work out of the box. Installing via `pip` on Linux and macOS will pull in
-pre-built FAISS wheels; Windows users can either rely on WSL or install FAISS via Conda before
-running `pip install -e .`. Frontend dependencies are managed with `npm` inside the `frontend/`
-directory.
+**Frontend**
+```bash
+cd frontend
+npm install
+cd ..
+```
 
-### 2. (Optional) Train the scikit-learn sentiment model
+### 2. Prepare Data & Models
 
-The serialized pipeline is intentionally excluded from version control. Run the helper script whenever
-you need to refresh the artifact:
+Download the real-world sentiment dataset and train the local scikit-learn model:
 
 ```bash
+# Fetch IMDb dataset
+python scripts/fetch_data.py
+
+# Train local model
 python scripts/train_sentiment_model.py
 ```
 
-This reads `data/sentiment_train.jsonl`, evaluates on `data/sentiment_eval.jsonl`, and writes
-`artifacts/sentiment_pipeline.joblib` used by the `sentiment-sklearn` preset.
+### 3. Run the Stack
 
-### 3. Execute an evaluation from the CLI
+You can run the backend and frontend separately, or use the provided CLI tools.
 
-Two configuration files live under `configs/`:
-
-```bash
-# Keyword baseline
-python -m eval_agent.cli run configs/sentiment_keyword.json
-
-# Trained scikit-learn pipeline (requires the artifact from step 2)
-python -m eval_agent.cli run configs/sentiment_sklearn.json
-
-\
-# Remote MCP-backed model (set the endpoint and export MCP_API_KEY before running)
-export MCP_API_KEY=your_api_key
-python -m eval_agent.cli run configs/sentiment_mcp.json
-=======
-# Retrieval-augmented generation demo powered by LangChain + FAISS
-python -m eval_agent.cli run configs/rag_langchain.json
-
-```
-
-Results are written to `runs/` as JSON (ignored by git). The CLI will also print a summary and, by
-default, the individual predictions.
-
-### 4. Launch the API service
-
+**Start the API Server**
 ```bash
 python -m eval_agent.cli serve --host 0.0.0.0 --port 8000
 ```
 
-Available endpoints include:
-
-- `GET /api/configs` — preset configurations exposed by the dashboard
-- `GET /api/runs` — list of historical runs stored in `runs/evaluations.db`
-- `POST /api/runs` — execute a configuration immediately
-- `GET /api/runs/{id}` — retrieve metrics and predictions for a single run
-
-All runs triggered through the API are persisted to SQLite with links to the JSON artifacts on disk.
-
-### 5. Start the React dashboard
-
-In a separate terminal:
-
+**Start the Dashboard**
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-By default the dashboard talks to `http://localhost:8000/api`. Override the target by exporting
-`VITE_API_BASE_URL` (either the bare API origin or a full `/api` URL) before running `npm run dev`
-or `npm run build`. When you build for production against the co-hosted FastAPI service, set
-`VITE_API_BASE_URL=/` so the generated bundle issues relative requests to `/api`.
+Visit `http://localhost:5173` to access the dashboard.
 
-### 6. Run the test suite
+## Usage
+
+### Running Evaluations
+
+You can trigger evaluations directly from the dashboard or via the CLI:
 
 ```bash
-pytest
+# Run keyword baseline
+python -m eval_agent.cli run configs/sentiment_keyword.json
+
+# Run real-world sentiment analysis
+python -m eval_agent.cli run configs/sentiment_realworld.json
 ```
 
-The tests cover both the keyword baseline and the LangChain-powered RAG configuration to guard
-against regressions in the evaluation engine.
+### Managing History
+
+The dashboard lists all historical runs. You can view detailed metrics and predictions for each run. To reset your environment, use the **"Clear"** button in the history sidebar.
 
 ## Deployment
 
-### Render (free tier)
+### Render & Heroku
 
-The repository ships with a [`render.yaml`](render.yaml) blueprint that provisions a free-tier FastAPI
-service together with a static build of the React dashboard.
+The repository includes `render.yaml` and `heroku.yml` for easy deployment to PaaS providers.
 
-1. Push the repository to your own GitHub (or GitLab/Bitbucket) account.
-2. Sign in to [Render](https://render.com) and choose **Blueprint** > **New Blueprint Instance**.
-3. Point Render at your fork and select the `render.yaml` file when prompted.
-4. Deploy the services:
-   - **`eval-agent-api`** — Python web service that runs `uvicorn eval_agent.api.app:app`.
-     The build step installs this package via `pip install .`, and the service exposes the HTTP
-     API on the free tier.
-   - **`eval-agent-dashboard`** — Static site that runs `npm install && npm run build` inside
-     `frontend/` and publishes the compiled assets from `frontend/dist`.
+*   **Render**: Connect your repo to deploy the API and static frontend automatically.
+*   **Heroku**: Use the container stack to deploy the Dockerized application.
 
-The blueprint automatically wires the dashboard's `VITE_API_BASE_URL` environment variable to the
-API service URL, and the frontend code appends `/api` if necessary. Runs executed via the hosted API
-write to `runs/evaluations.db`, which lives on the instance's ephemeral disk—data will be cleared
-whenever the service is redeployed.
+## Extending
 
-Adjust service names, regions, or plans in `render.yaml` if you need to scale beyond the free tier.
+The agent is designed to be extended:
 
-### Heroku (container deploy)
+*   **Datasets**: Subclass `eval_agent.datasets.base.Dataset` and use `@DATASET_REGISTRY`.
+*   **Models**: Subclass `eval_agent.models.base.ModelAdapter` and use `@MODEL_REGISTRY`.
+*   **Metrics**: Subclass `eval_agent.metrics.base.Metric` and use `@METRIC_REGISTRY`.
 
-The repository now includes a multi-stage [`Dockerfile`](Dockerfile) and a [`heroku.yml`](heroku.yml)
-definition that bundle the API and the compiled React dashboard into a single container. Heroku's
-free tier can run this setup via the container stack:
-
-1. Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) and authenticate with
-   `heroku login`.
-2. Create an app that uses the container stack: `heroku create <your-app-name> --stack container`.
-3. Push the Docker image: `heroku container:push web --app <your-app-name>`.
-4. Release the image: `heroku container:release web --app <your-app-name>`.
-5. Visit the deployed dashboard with `heroku open --app <your-app-name>` or check health via
-   `https://<your-app-name>.herokuapp.com/api/health`.
-
-The Docker image builds the dashboard with `VITE_API_BASE_URL=/`, so the static assets served by the
-FastAPI application automatically speak to the same origin. No additional environment variables are
-required; evaluation runs are persisted in the container's ephemeral `runs/evaluations.db` SQLite
-database just like the local setup.
-
-## Extending the agent
-
-
-
-- Register new datasets by creating a subclass of `eval_agent.datasets.base.Dataset` and decorating it
-  with `@DATASET_REGISTRY.register("your-dataset-name")`.
-- Add model adapters by subclassing `eval_agent.models.base.ModelAdapter` and registering via
-  `@MODEL_REGISTRY.register("your-model")`.
-- Implement additional metrics by extending `eval_agent.metrics.base.Metric` and registering with
-  `@METRIC_REGISTRY.register("metric-name")`.
-- Surface new presets in the API/dashboard by updating `PRESET_CONFIGS` in
-  `src/eval_agent/api/app.py`.
-
-Each component becomes available in configuration files, through the CLI, and via the HTTP API as soon
-as it is registered.
+See `src/eval_agent/` for implementation details.

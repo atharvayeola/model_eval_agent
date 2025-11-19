@@ -23,7 +23,7 @@ from eval_agent.api.schemas import (
 from eval_agent.api.storage import RunStore
 from eval_agent.runner import EvaluationResult
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[3]
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 RUNS_DIR = BASE_DIR / "runs"
 DEFAULT_DB_PATH = RUNS_DIR / "evaluations.db"
@@ -31,6 +31,7 @@ DEFAULT_DB_PATH = RUNS_DIR / "evaluations.db"
 PRESET_CONFIGS = {
     "sentiment-keyword": BASE_DIR / "configs" / "sentiment_keyword.json",
     "sentiment-sklearn": BASE_DIR / "configs" / "sentiment_sklearn.json",
+    "sentiment-realworld": BASE_DIR / "configs" / "sentiment_realworld.json",
     "rag-langchain": BASE_DIR / "configs" / "rag_langchain.json",
 }
 
@@ -45,20 +46,7 @@ app.add_middleware(
 store = RunStore(DEFAULT_DB_PATH)
 
 
-if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
-else:
 
-    @app.get("/", include_in_schema=False)
-    def serve_index() -> None:
-        raise HTTPException(status_code=404, detail="Frontend bundle not found")
-
-
-    @app.get("/{full_path:path}", include_in_schema=False)
-    def serve_frontend(full_path: str) -> None:
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="API route not found")
-        raise HTTPException(status_code=404, detail="Frontend bundle not found")
 
 @app.on_event("startup")
 def _startup() -> None:
@@ -171,6 +159,12 @@ def list_runs() -> List[RunSummarySchema]:
     return [_record_to_summary(record) for record in records]
 
 
+@app.delete("/api/runs")
+def delete_runs() -> dict:
+    store.clear_runs()
+    return {"status": "ok"}
+
+
 @app.get("/api/runs/{run_id}", response_model=RunDetailSchema)
 def get_run(run_id: int) -> RunDetailSchema:
     record = store.get_run(run_id)
@@ -191,3 +185,19 @@ def create_run(request: RunCreateRequest) -> RunDetailSchema:
 
     run_id = store.record_run(config_name=config_name, config_path=config_path, result=result)
     return _result_to_schema(run_id=run_id, config_name=config_name, config_path=config_path, result=result)
+
+
+if FRONTEND_DIST.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+else:
+
+    @app.get("/", include_in_schema=False)
+    def serve_index() -> None:
+        raise HTTPException(status_code=404, detail="Frontend bundle not found")
+
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str) -> None:
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        raise HTTPException(status_code=404, detail="Frontend bundle not found")

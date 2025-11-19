@@ -18,7 +18,8 @@ import {
   fetchConfigs,
   fetchRun,
   fetchRuns,
-  triggerRun
+  triggerRun,
+  clearRuns
 } from './api';
 
 const App = () => {
@@ -96,6 +97,21 @@ const App = () => {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!window.confirm('Are you sure you want to delete all evaluation history? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await clearRuns();
+      setSuccess('Evaluation history cleared successfully.');
+      setRuns([]);
+      setSelectedRun(null);
+      setSelectedRunId(null);
+    } catch (err) {
+      setError('Failed to clear history.');
+    }
+  };
+
   const handleRunSelection = (runId: number) => {
     loadRunDetail(runId);
   };
@@ -136,6 +152,7 @@ const App = () => {
               runs={runs}
               selectedRunId={selectedRunId}
               onSelect={handleRunSelection}
+              onClear={handleClearHistory}
               loading={runsLoading}
             />
           </Grid>

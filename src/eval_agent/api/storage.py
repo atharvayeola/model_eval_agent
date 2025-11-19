@@ -93,6 +93,11 @@ class RunStore:
             connection.commit()
             return int(cursor.lastrowid)
 
+    def clear_runs(self) -> None:
+        with sqlite3.connect(self.path) as connection:
+            connection.execute("DELETE FROM runs")
+            connection.commit()
+
     def list_runs(self) -> List[RunRecord]:
         with sqlite3.connect(self.path) as connection:
             cursor = connection.execute(

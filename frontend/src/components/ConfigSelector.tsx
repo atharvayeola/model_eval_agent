@@ -71,6 +71,7 @@ const ConfigSelector: FC<ConfigSelectorProps> = ({
       <Button
         variant="contained"
         startIcon={<PlayArrowIcon />}
+        color="secondary"
         onClick={onTrigger}
         disabled={!selectedConfig || triggering}
       >

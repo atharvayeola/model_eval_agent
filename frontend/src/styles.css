@@ -10,5 +10,7 @@ body,
 }
 
 body {
-  background-color: #f7f9fc;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  background-attachment: fixed;
+  color: #f8fafc;
 }

@@ -67,7 +67,7 @@ const RunDetail: FC<RunDetailProps> = ({ run, loading }) => {
 
   if (!run) {
     return (
-      <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
+      <Paper sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="body1" color="text.secondary">
           Select a run from the left to inspect detailed metrics and predictions.
         </Typography>
@@ -77,7 +77,7 @@ const RunDetail: FC<RunDetailProps> = ({ run, loading }) => {
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
-      <Paper variant="outlined" sx={{ p: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <Typography variant="h5" fontWeight={600} gutterBottom>
           {run.name}
         </Typography>
@@ -93,7 +93,7 @@ const RunDetail: FC<RunDetailProps> = ({ run, loading }) => {
       <MetricsCards metrics={run.metrics} />
 
       {labelDistribution && labelDistribution.length > 0 && (
-        <Paper variant="outlined" sx={{ p: 3 }}>
+        <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Label distribution
           </Typography>
@@ -114,7 +114,7 @@ const RunDetail: FC<RunDetailProps> = ({ run, loading }) => {
       )}
 
       {confusionMatrix && confusionMatrix.labels.length > 0 && (
-        <Paper variant="outlined" sx={{ p: 3 }}>
+        <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Confusion matrix
           </Typography>

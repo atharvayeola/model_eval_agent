@@ -1,0 +1,45 @@
+{
+    "name": "sentiment-realworld-sklearn",
+    "task": "text-classification",
+    "dataset": {
+        "type": "jsonl-classification",
+        "parameters": {
+            "path": "../data/real_world_sentiment.jsonl"
+        }
+    },
+    "model": {
+        "type": "sklearn-pipeline",
+        "parameters": {
+            "artifact_path": "../artifacts/sentiment_pipeline.joblib"
+        }
+    },
+    "metrics": [
+        {
+            "type": "accuracy"
+        },
+        {
+            "type": "precision",
+            "parameters": {
+                "average": "macro"
+            }
+        },
+        {
+            "type": "recall",
+            "parameters": {
+                "average": "macro"
+            }
+        },
+        {
+            "type": "f1",
+            "parameters": {
+                "average": "macro"
+            }
+        },
+        {
+            "type": "confusion-matrix"
+        },
+        {
+            "type": "label-distribution"
+        }
+    ]
+}

@@ -12,11 +12,6 @@ const normalizedBase = (() => {
 
 const apiClient = axios.create({
   baseURL: normalizedBase
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
-
-
 });
 
 export interface Metric {
@@ -77,4 +72,8 @@ export async function triggerRun(config: string, savePredictions?: boolean): Pro
   }
   const { data } = await apiClient.post<RunDetail>('/runs', payload);
   return data;
+}
+
+export async function clearRuns(): Promise<void> {
+  await apiClient.delete('/runs');
 }
